@@ -1,7 +1,7 @@
-package com.edu.ulab.app.storage;
+package com.edu.ulab.app.storage.memory;
 
 import com.edu.ulab.app.entity.Book;
-import com.edu.ulab.app.entity.User;
+import com.edu.ulab.app.entity.Person;
 import com.edu.ulab.app.exception.EntityDoesNotExistException;
 import lombok.NonNull;
 import org.springframework.stereotype.Repository;
@@ -11,41 +11,41 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Repository
-public class Storage implements UserRepository, BookRepository {
+public class Storage implements UserInMemoryRepository, BookInMemoryRepository {
     private static final String USER_ALREADY_SAVED = "User has already been saved";
     private static final String BOOK_ALREADY_SAVED = "Book has already been saved";
     private static final String USER_NEEDS_ID_MESSAGE = "Operation requires a user id to be provided";
     private static final String BOOK_NEEDS_ID_MESSAGE = "Operation requires a book id to be provided";
     private static final String BOOK_ALREADY_ASSOCIATED = "Book is already associated with a user";
 
-    private final Map<Long, User> userData = new HashMap<>();
+    private final Map<Long, Person> userData = new HashMap<>();
     private final Map<Long, Book> bookData = new HashMap<>();
     private long nextUserId = 1;
     private long nextBookId = 1;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Override
-    public User save(@NonNull User user) {
-        if (user.getId() != null) {
+    public Person save(@NonNull Person person) {
+        if (person.getId() != null) {
             throw new IllegalArgumentException(USER_ALREADY_SAVED);
         }
 
         lock.writeLock().lock();
         try {
 
-            user.setId(nextUserId++);
-            userData.put(user.getId(), user);
+            person.setId(nextUserId++);
+            userData.put(person.getId(), person);
 
-            user.getBooks().forEach(book -> {
+            person.getBooks().forEach(book -> {
                 if (book.getUserId() != null) {
                     throw new IllegalArgumentException(BOOK_ALREADY_ASSOCIATED);
                 }
-                book.setUserId(user.getId());
+                book.setUserId(person.getId());
 
                 save(book);
             });
 
-            return user;
+            return person;
 
         } finally {
             lock.writeLock().unlock();
@@ -53,16 +53,16 @@ public class Storage implements UserRepository, BookRepository {
     }
 
     @Override
-    public User update(@NonNull User user) {
-        Objects.requireNonNull(user.getId(), USER_NEEDS_ID_MESSAGE);
+    public Person update(@NonNull Person person) {
+        Objects.requireNonNull(person.getId(), USER_NEEDS_ID_MESSAGE);
 
         lock.writeLock().lock();
         try {
 
-            if (userData.get(user.getId()) == null) {
-                throw new EntityDoesNotExistException("User with id " + user.getId() + " does not exist");
+            if (userData.get(person.getId()) == null) {
+                throw new EntityDoesNotExistException("User with id " + person.getId() + " does not exist");
             }
-            return userData.merge(user.getId(), user, (oldUser, newUser) -> {
+            return userData.merge(person.getId(), person, (oldUser, newUser) -> {
                 Set<Book> orphanBooks = new HashSet<>(getAllBooksByUserId(oldUser.getId()));
                 orphanBooks.removeAll(new HashSet<>(newUser.getBooks()));
                 orphanBooks.forEach(book -> bookData.get(book.getId()).setUserId(null));
@@ -77,16 +77,16 @@ public class Storage implements UserRepository, BookRepository {
     }
 
     @Override
-    public User saveOrUpdate(@NonNull User user) {
-        return user.getId() == null ? save(user) : update(user);
+    public Person saveOrUpdate(@NonNull Person person) {
+        return person.getId() == null ? save(person) : update(person);
     }
 
     @Override
-    public Optional<User> getUserById(@NonNull Long id) {
+    public Optional<Person> getUserById(@NonNull Long id) {
         lock.readLock().lock();
         try {
 
-            Optional<User> userOpt = Optional.ofNullable(userData.get(id));
+            Optional<Person> userOpt = Optional.ofNullable(userData.get(id));
             userOpt.ifPresent(user -> user.setBooks(getAllBooksByUserId(id)));
             return userOpt;
 
@@ -100,9 +100,9 @@ public class Storage implements UserRepository, BookRepository {
         lock.writeLock().lock();
         try {
 
-            User deletedUser = userData.remove(id);
-            if (deletedUser != null) {
-                getAllBooksByUserId(deletedUser.getId())
+            Person deletedPerson = userData.remove(id);
+            if (deletedPerson != null) {
+                getAllBooksByUserId(deletedPerson.getId())
                         .stream()
                         .map(Book::getId)
                         .forEach(bookData::remove);

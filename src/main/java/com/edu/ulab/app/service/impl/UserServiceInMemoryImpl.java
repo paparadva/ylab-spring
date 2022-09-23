@@ -2,11 +2,11 @@ package com.edu.ulab.app.service.impl;
 
 import com.edu.ulab.app.dto.UserDto;
 import com.edu.ulab.app.entity.Book;
-import com.edu.ulab.app.entity.User;
+import com.edu.ulab.app.entity.Person;
 import com.edu.ulab.app.exception.NotFoundException;
 import com.edu.ulab.app.mapper.UserMapper;
 import com.edu.ulab.app.service.UserService;
-import com.edu.ulab.app.storage.UserRepository;
+import com.edu.ulab.app.storage.memory.UserInMemoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,33 +14,33 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Slf4j
-@Service
+@Service("userInMemoryService")
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
-    private final UserRepository repository;
+public class UserServiceInMemoryImpl implements UserService {
+    private final UserInMemoryRepository repository;
     private final UserMapper mapper;
 
     @Override
     public UserDto createUser(UserDto userDto) {
-        User user = mapper.userDtoToUserEntity(userDto);
-        User createdUser = repository.save(user);
-        return mapper.userEntityToUserDto(createdUser);
+        Person person = mapper.userDtoToUserEntity(userDto);
+        Person createdPerson = repository.save(person);
+        return mapper.userEntityToUserDto(createdPerson);
     }
 
     @Override
     public UserDto updateUser(UserDto userDto) {
-        User user = mapper.userDtoToUserEntity(userDto);
-        User updatedUser = repository.update(user);
-        return mapper.userEntityToUserDto(updatedUser);
+        Person person = mapper.userDtoToUserEntity(userDto);
+        Person updatedPerson = repository.update(person);
+        return mapper.userEntityToUserDto(updatedPerson);
     }
 
     @Override
     public UserDto getUserById(Long id) {
-        User user = repository.getUserById(id).orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
-        List<Long> bookIds = user.getBooks().stream()
+        Person person = repository.getUserById(id).orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
+        List<Long> bookIds = person.getBooks().stream()
                 .map(Book::getId)
                 .toList();
-        UserDto userDto = mapper.userEntityToUserDto(user);
+        UserDto userDto = mapper.userEntityToUserDto(person);
         userDto.setBookIds(bookIds);
         return userDto;
     }
