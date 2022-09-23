@@ -10,7 +10,9 @@ import com.edu.ulab.app.web.request.BookRequest;
 import com.edu.ulab.app.web.request.UserBookRequest;
 import com.edu.ulab.app.web.response.UserBookResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -23,8 +25,8 @@ public class UserDataFacade {
     private final UserMapper userMapper;
     private final BookMapper bookMapper;
 
-    public UserDataFacade(UserService userService,
-                          BookService bookService,
+    public UserDataFacade(@Qualifier("userJpaService") UserService userService,
+                          @Qualifier("bookJpaService") BookService bookService,
                           UserMapper userMapper,
                           BookMapper bookMapper) {
         this.userService = userService;
@@ -33,6 +35,7 @@ public class UserDataFacade {
         this.bookMapper = bookMapper;
     }
 
+    @Transactional
     public UserBookResponse createUserWithBooks(UserBookRequest userBookRequest) {
         log.info("Got user book create request: {}", userBookRequest);
         UserDto userDto = userMapper.userRequestToUserDto(userBookRequest.getUserRequest());
@@ -50,6 +53,7 @@ public class UserDataFacade {
                 .build();
     }
 
+    @Transactional
     public UserBookResponse updateUserWithBooks(UserBookRequest userBookRequest, Long userId) {
         log.info("Got user book update request: id={}, {}", userId, userBookRequest);
         UserDto userDto = userMapper.userRequestToUserDto(userBookRequest.getUserRequest());
@@ -68,15 +72,20 @@ public class UserDataFacade {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public UserBookResponse getUserWithBooks(Long userId) {
+        log.info("Got user with books request: userId={}", userId);
         UserDto userDto = userService.getUserById(userId);
+        log.info("Mapped user: {}", userDto);
         return UserBookResponse.builder()
                 .userId(userDto.getId())
                 .booksIdList(userDto.getBookIds())
                 .build();
     }
 
+    @Transactional
     public void deleteUserWithBooks(Long userId) {
+        log.info("Got delete user request: userId={}", userId);
         userService.deleteUserById(userId);
     }
 
