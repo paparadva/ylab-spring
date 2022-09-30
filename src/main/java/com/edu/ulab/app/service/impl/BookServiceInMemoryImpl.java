@@ -5,16 +5,16 @@ import com.edu.ulab.app.entity.Book;
 import com.edu.ulab.app.exception.NotFoundException;
 import com.edu.ulab.app.mapper.BookMapper;
 import com.edu.ulab.app.service.BookService;
-import com.edu.ulab.app.storage.BookRepository;
+import com.edu.ulab.app.storage.memory.BookInMemoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Slf4j
-@Service
+@Service("bookInMemoryService")
 @RequiredArgsConstructor
-public class BookServiceImpl implements BookService {
-    private final BookRepository repository;
+public class BookServiceInMemoryImpl implements BookService {
+    private final BookInMemoryRepository repository;
     private final BookMapper mapper;
 
     @Override
