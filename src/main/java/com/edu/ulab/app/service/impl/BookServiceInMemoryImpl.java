@@ -2,6 +2,7 @@ package com.edu.ulab.app.service.impl;
 
 import com.edu.ulab.app.dto.BookDto;
 import com.edu.ulab.app.entity.Book;
+import com.edu.ulab.app.exception.EntityDoesNotExistException;
 import com.edu.ulab.app.exception.NotFoundException;
 import com.edu.ulab.app.mapper.BookMapper;
 import com.edu.ulab.app.service.BookService;
@@ -26,9 +27,13 @@ public class BookServiceInMemoryImpl implements BookService {
 
     @Override
     public BookDto updateBook(BookDto bookDto) {
-        Book book = mapper.bookDtoToBookEntity(bookDto);
-        Book updatedBook = repository.update(book);
-        return mapper.bookEntityToBookDto(updatedBook);
+        try {
+            Book book = mapper.bookDtoToBookEntity(bookDto);
+            Book updatedBook = repository.update(book);
+            return mapper.bookEntityToBookDto(updatedBook);
+        } catch (EntityDoesNotExistException ex) {
+            throw new NotFoundException(ex);
+        }
     }
 
     @Override

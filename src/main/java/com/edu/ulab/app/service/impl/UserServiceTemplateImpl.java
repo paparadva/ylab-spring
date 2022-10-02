@@ -3,11 +3,13 @@ package com.edu.ulab.app.service.impl;
 import com.edu.ulab.app.dto.UserDto;
 import com.edu.ulab.app.entity.Person;
 import com.edu.ulab.app.exception.NotFoundException;
+import com.edu.ulab.app.exception.ServiceException;
 import com.edu.ulab.app.mapper.UserMapper;
 import com.edu.ulab.app.service.BookService;
 import com.edu.ulab.app.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -41,15 +43,19 @@ public class UserServiceTemplateImpl implements UserService {
     public UserDto createUser(UserDto userDto) {
         final String INSERT_SQL = "INSERT INTO PERSON(FULL_NAME, TITLE, AGE) VALUES (?,?,?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(
-                connection -> {
-                    PreparedStatement ps = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
-                    ps.setString(1, userDto.getFullName());
-                    ps.setString(2, userDto.getTitle());
-                    ps.setLong(3, userDto.getAge());
-                    return ps;
-                },
-                keyHolder);
+        try {
+            jdbcTemplate.update(
+                    connection -> {
+                        PreparedStatement ps = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
+                        ps.setString(1, userDto.getFullName());
+                        ps.setString(2, userDto.getTitle());
+                        ps.setLong(3, userDto.getAge());
+                        return ps;
+                    },
+                    keyHolder);
+        } catch (DataAccessException ex) {
+            throw new ServiceException(ex);
+        }
 
         userDto.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         log.info("Created user with id {}", userDto.getId());
@@ -61,13 +67,18 @@ public class UserServiceTemplateImpl implements UserService {
         final String UPDATE_SQL = "UPDATE PERSON SET FULL_NAME=?, TITLE=?, AGE=? WHERE ID=?";
         Objects.requireNonNull(userDto.getId());
 
-        queryBookIds(userDto.getId()).forEach(bookService::deleteBookById);
+        int updateCount;
+        try {
+            queryBookIds(userDto.getId()).forEach(bookService::deleteBookById);
 
-        int updateCount = jdbcTemplate.update(UPDATE_SQL,
-                userDto.getFullName(),
-                userDto.getTitle(),
-                userDto.getAge(),
-                userDto.getId());
+            updateCount = jdbcTemplate.update(UPDATE_SQL,
+                    userDto.getFullName(),
+                    userDto.getTitle(),
+                    userDto.getAge(),
+                    userDto.getId());
+        } catch (DataAccessException ex) {
+            throw new ServiceException(ex);
+        }
 
         if (updateCount > 0) {
             log.info("Updated user with id {}", userDto.getId());
@@ -82,11 +93,17 @@ public class UserServiceTemplateImpl implements UserService {
         final String SELECT_USER_SQL = "SELECT ID, FULL_NAME, TITLE, AGE FROM PERSON WHERE ID=?";
         Objects.requireNonNull(id);
 
-        Person user = jdbcTemplate.query(SELECT_USER_SQL, personRowMapper, id)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
-        log.info("Found user: {}", user);
+        Person user;
+        try {
+            user = jdbcTemplate.query(SELECT_USER_SQL, personRowMapper, id)
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
+            log.info("Found user: {}", user);
+        } catch (DataAccessException ex) {
+            throw new ServiceException(ex);
+        }
+
         UserDto userDto = mapper.userEntityToUserDto(user);
 
         List<Long> bookIds = queryBookIds(id);
@@ -103,9 +120,14 @@ public class UserServiceTemplateImpl implements UserService {
         final String DELETE_SQL = "DELETE FROM PERSON WHERE ID=?";
         Objects.requireNonNull(id);
 
-        queryBookIds(id).forEach(bookService::deleteBookById);
+        int updateCount;
+        try {
+            queryBookIds(id).forEach(bookService::deleteBookById);
+            updateCount = jdbcTemplate.update(DELETE_SQL, id);
+        } catch (DataAccessException ex) {
+            throw new ServiceException(ex);
+        }
 
-        int updateCount = jdbcTemplate.update(DELETE_SQL, id);
         if (updateCount > 0) {
             log.info("Deleted user with id {}", id);
         } else {
@@ -115,6 +137,11 @@ public class UserServiceTemplateImpl implements UserService {
 
     private List<Long> queryBookIds(Long userId) {
         final String SELECT_BOOK_IDS_SQL = "SELECT ID FROM BOOK WHERE USER_ID=?";
-        return jdbcTemplate.queryForList(SELECT_BOOK_IDS_SQL, Long.class, userId);
+
+        try {
+            return jdbcTemplate.queryForList(SELECT_BOOK_IDS_SQL, Long.class, userId);
+        } catch (DataAccessException ex) {
+            throw new ServiceException(ex);
+        }
     }
 }

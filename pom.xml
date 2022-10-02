@@ -23,6 +23,7 @@
         <jsr.version>2.13.3</jsr.version>
         <javax.validation.version>2.0.0.Alpha1</javax.validation.version>
         <springdoc-openapi-ui.version>1.6.7</springdoc-openapi-ui.version>
+        <liquidbase.version>4.10.0</liquidbase.version>
     </properties>
 
     <dependencies>
@@ -35,6 +36,12 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <version>${liquidbase.version}</version>
         </dependency>
 
         <dependency>

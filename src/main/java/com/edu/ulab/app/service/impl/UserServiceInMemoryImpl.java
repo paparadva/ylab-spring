@@ -3,6 +3,7 @@ package com.edu.ulab.app.service.impl;
 import com.edu.ulab.app.dto.UserDto;
 import com.edu.ulab.app.entity.Book;
 import com.edu.ulab.app.entity.Person;
+import com.edu.ulab.app.exception.EntityDoesNotExistException;
 import com.edu.ulab.app.exception.NotFoundException;
 import com.edu.ulab.app.mapper.UserMapper;
 import com.edu.ulab.app.service.UserService;
@@ -29,20 +30,30 @@ public class UserServiceInMemoryImpl implements UserService {
 
     @Override
     public UserDto updateUser(UserDto userDto) {
-        Person person = mapper.userDtoToUserEntity(userDto);
-        Person updatedPerson = repository.update(person);
-        return mapper.userEntityToUserDto(updatedPerson);
+        try {
+            Person person = mapper.userDtoToUserEntity(userDto);
+            Person updatedPerson = repository.update(person);
+            return mapper.userEntityToUserDto(updatedPerson);
+
+        } catch (EntityDoesNotExistException ex) {
+            throw new NotFoundException(ex);
+        }
     }
 
     @Override
     public UserDto getUserById(Long id) {
-        Person person = repository.getUserById(id).orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
-        List<Long> bookIds = person.getBooks().stream()
-                .map(Book::getId)
-                .toList();
-        UserDto userDto = mapper.userEntityToUserDto(person);
-        userDto.setBookIds(bookIds);
-        return userDto;
+        try {
+            Person person = repository.getUserById(id).orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
+            List<Long> bookIds = person.getBooks().stream()
+                    .map(Book::getId)
+                    .toList();
+            UserDto userDto = mapper.userEntityToUserDto(person);
+            userDto.setBookIds(bookIds);
+            return userDto;
+
+        } catch (EntityDoesNotExistException ex) {
+            throw new NotFoundException(ex);
+        }
     }
 
     @Override
