@@ -29,6 +29,8 @@ public final class Person {
     @Column(nullable = false)
     private int age;
 
+    @Column(nullable = false)
+    private String preferredGenre;
 
     @OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
