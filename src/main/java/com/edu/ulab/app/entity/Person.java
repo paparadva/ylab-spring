@@ -12,14 +12,24 @@ import java.util.List;
 @Entity
 @Data
 @NoArgsConstructor
+@Table(name = "person", schema = "ulab_edu")
 public final class Person {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence")
+    @SequenceGenerator(name = "sequence", sequenceName = "ulab_edu.sequence", allocationSize = 1)
     @EqualsAndHashCode.Include
     private Long id;
+
+    @Column(nullable = false)
     private String fullName;
+
+    @Column(nullable = false)
     private String title;
+
+    @Column(nullable = false)
     private int age;
+
+
     @OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<Book> books = new ArrayList<>();
