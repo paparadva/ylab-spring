@@ -23,6 +23,11 @@
         <jsr.version>2.13.3</jsr.version>
         <javax.validation.version>2.0.0.Alpha1</javax.validation.version>
         <springdoc-openapi-ui.version>1.6.7</springdoc-openapi-ui.version>
+        <liquidbase.version>4.10.0</liquidbase.version>
+        <hibernate.types.version>2.16.2</hibernate.types.version>
+        <test.containers.version>1.17.2</test.containers.version>
+        <db.util.version>1.0.6</db.util.version>
+        <postgres.test-containers.version>1.17.2</postgres.test-containers.version>
     </properties>
 
     <dependencies>
@@ -35,6 +40,12 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <version>${liquidbase.version}</version>
         </dependency>
 
         <dependency>
@@ -63,6 +74,38 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>${apache.commons.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vladmihalcea</groupId>
+            <artifactId>hibernate-types-52</artifactId>
+            <version>${hibernate.types.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${test.containers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${test.containers.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vladmihalcea</groupId>
+            <artifactId>db-util</artifactId>
+            <version>${db.util.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgres.test-containers.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

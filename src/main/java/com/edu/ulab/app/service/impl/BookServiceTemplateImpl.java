@@ -3,10 +3,12 @@ package com.edu.ulab.app.service.impl;
 import com.edu.ulab.app.dto.BookDto;
 import com.edu.ulab.app.entity.Book;
 import com.edu.ulab.app.exception.NotFoundException;
+import com.edu.ulab.app.exception.ServiceException;
 import com.edu.ulab.app.mapper.BookMapper;
 import com.edu.ulab.app.service.BookService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -29,16 +31,21 @@ public class BookServiceTemplateImpl implements BookService {
     public BookDto createBook(BookDto bookDto) {
         final String INSERT_SQL = "INSERT INTO BOOK(TITLE, AUTHOR, PAGE_COUNT, USER_ID) VALUES (?,?,?,?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(
-                connection -> {
-                    var ps = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
-                    ps.setString(1, bookDto.getTitle());
-                    ps.setString(2, bookDto.getAuthor());
-                    ps.setLong(3, bookDto.getPageCount());
-                    ps.setLong(4, bookDto.getUserId());
-                    return ps;
-                },
-                keyHolder);
+
+        try {
+            jdbcTemplate.update(
+                    connection -> {
+                        var ps = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
+                        ps.setString(1, bookDto.getTitle());
+                        ps.setString(2, bookDto.getAuthor());
+                        ps.setLong(3, bookDto.getPageCount());
+                        ps.setLong(4, bookDto.getUserId());
+                        return ps;
+                    },
+                    keyHolder);
+        } catch (DataAccessException ex) {
+            throw new ServiceException(ex);
+        }
 
         bookDto.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         log.info("Created book with id {}", bookDto.getId());
@@ -49,12 +56,18 @@ public class BookServiceTemplateImpl implements BookService {
     public BookDto updateBook(BookDto bookDto) {
         final String UPDATE_SQL = "UPDATE BOOK SET TITLE=?, AUTHOR=?, PAGE_COUNT=?, USER_ID=? WHERE ID=?";
 
-        int updateCount = jdbcTemplate.update(UPDATE_SQL,
-                bookDto.getTitle(),
-                bookDto.getAuthor(),
-                bookDto.getPageCount(),
-                bookDto.getUserId(),
-                Objects.requireNonNull(bookDto.getId()));
+        int updateCount;
+        try {
+            updateCount = jdbcTemplate.update(UPDATE_SQL,
+                    bookDto.getTitle(),
+                    bookDto.getAuthor(),
+                    bookDto.getPageCount(),
+                    bookDto.getUserId(),
+                    Objects.requireNonNull(bookDto.getId()));
+
+        } catch (DataAccessException ex) {
+            throw new ServiceException(ex);
+        }
 
         if (updateCount > 0) {
             log.info("Updated book with id {}", bookDto.getId());
@@ -69,10 +82,16 @@ public class BookServiceTemplateImpl implements BookService {
         final String SELECT_SQL = "SELECT TITLE, AUTHOR, PAGE_COUNT, USER_ID, ID FROM BOOK WHERE ID=?";
         Objects.requireNonNull(id);
 
-        Book book = jdbcTemplate.query(SELECT_SQL, bookRowMapper, id)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Book with id " + id + " not found"));
+        Book book;
+        try {
+            book = jdbcTemplate.query(SELECT_SQL, bookRowMapper, id)
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException("Book with id " + id + " not found"));
+
+        } catch (DataAccessException ex) {
+            throw new ServiceException(ex);
+        }
 
         log.info("Found book: {}", book);
         return mapper.bookEntityToBookDto(book);
@@ -81,7 +100,13 @@ public class BookServiceTemplateImpl implements BookService {
     @Override
     public void deleteBookById(Long id) {
         final String DELETE_SQL = "DELETE FROM BOOK WHERE ID=?";
-        int updateCount = jdbcTemplate.update(DELETE_SQL, Objects.requireNonNull(id));
+
+        int updateCount;
+        try {
+            updateCount = jdbcTemplate.update(DELETE_SQL, Objects.requireNonNull(id));
+        } catch (DataAccessException ex) {
+            throw new ServiceException(ex);
+        }
 
         if (updateCount > 0) {
             log.info("Deleted book with id {}", id);

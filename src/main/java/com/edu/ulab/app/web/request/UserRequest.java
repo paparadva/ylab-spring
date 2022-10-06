@@ -7,4 +7,5 @@ public class UserRequest {
     private String fullName;
     private String title;
     private int age;
+    private String preferredGenre;
 }
